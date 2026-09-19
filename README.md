@@ -2,7 +2,7 @@
 
 **Should I bring an umbrella today?** Pick four things and get the call instantly.
 
-**Live demo:** https://<your-username>.github.io/umbrella-ai/
+**Live demo:** https://garrett0088.github.io/umbrella-ai/
 
 > A class project for Professor Ping Wu's AI class at CSTU. The assignment, *Build Your FDE Toolbox*, asks students to write a prompt that makes Claude generate a skill, one that names the real problem before designing a fix. Umbrella AI turns that skill's decision logic into a live, one-page tool.
 
