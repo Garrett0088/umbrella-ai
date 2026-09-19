@@ -1,0 +1,19 @@
+# Secrets
+.env
+.env.*
+!.env.sample
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Dependencies and builds (for future versions)
+node_modules/
+dist/
+.vercel/
+.wrangler/

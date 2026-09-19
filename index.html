@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Umbrella AI</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☂️</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --slicker:#F2C230; --storm:#2E3A4B; --puddle:#8FA3B8;
+    --mist:#EEF2F5; --asphalt:#1C2430; --wet:#5B6F86;
+    --c0:#DDE6EE; --c1:#B9CADA; --c2:#7A8FA6; --c3:#2E3A4B;
+    --display:"Bricolage Grotesque","Arial Black",system-ui,sans-serif;
+    --body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--mist);color:var(--asphalt);font:17px/1.5 var(--body)}
+  main{max-width:600px;margin:0 auto;padding:36px 18px 60px}
+  header{margin:0 0 26px}
+  h1{font:800 clamp(2.1rem,8vw,3.2rem)/1 var(--display);letter-spacing:-.02em;margin:0}
+  .mode{position:absolute;top:10px;right:10px;z-index:2;display:inline-flex;background:var(--storm);border-radius:999px;padding:3px}
+  .mode button{font:700 .75rem var(--body);border:0;border-radius:999px;padding:4px 11px;background:transparent;color:#fff;cursor:pointer}
+  .mode button[aria-pressed="true"]{background:var(--slicker);color:var(--asphalt)}
+  .mode button:focus-visible{outline:3px solid var(--slicker);outline-offset:2px}
+  /* AI mode hides the internals; the math underneath is identical */
+  body:not(.dev) .opt small, body:not(.dev) .tick small, body:not(.dev) .seg em,
+  body:not(.dev) #math, body:not(.dev) details{display:none}
+  .card{position:relative;overflow:hidden;background:#fff;border:2px solid var(--storm);border-radius:14px;padding:20px}
+  #rain{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+  .card .q{position:relative;z-index:1}
+  .q{margin-bottom:22px}
+  .q:last-child{margin-bottom:0}
+  .qt{font-weight:700;margin:0 0 8px;display:flex;justify-content:space-between;gap:8px}
+  .qt span{color:var(--wet)}
+  .opts{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:1fr;gap:8px}
+  @media (max-width:420px){.opts{grid-template-columns:repeat(2,1fr)}}
+  .opt{position:relative;display:flex}
+  .opt input{position:absolute;opacity:0;inset:0}
+  .opt span{background:rgba(255,255,255,.72);flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:72px;text-align:center;padding:8px 6px;border:1.5px solid var(--puddle);border-radius:10px;cursor:pointer;font-size:.95rem;line-height:1.25}
+  .opt small{margin-top:4px;font-weight:700;font-size:.8rem;color:var(--wet)}
+  .opt input:checked + span{background:var(--storm);color:#fff;border-color:var(--storm)}
+  .opt input:checked + span small{color:var(--slicker)}
+  .opt input:focus-visible + span{outline:3px solid var(--slicker);outline-offset:2px}
+
+  .slider{position:relative;padding:0 11px}
+  input[type=range]{width:100%;margin:0;accent-color:var(--storm)}
+  input[type=range]:focus-visible{outline:3px solid var(--slicker);outline-offset:4px}
+  .ticks{position:relative;height:40px;margin:4px 8px 0}
+  .tick{position:absolute;transform:translateX(-50%);text-align:center;font-size:.85rem;line-height:1.2;color:var(--wet);white-space:nowrap}
+  .tick::before{content:"";display:block;width:2px;height:6px;background:var(--puddle);margin:0 auto 3px}
+  .tick small{display:block;font-weight:700;font-size:.75rem}
+  .tick.on{color:var(--asphalt);font-weight:700}
+
+  .result{margin-top:22px}
+  .track{position:relative;display:grid;grid-template-columns:repeat(4,1fr);background:var(--storm);border-radius:999px;padding:5px}
+  .glow{position:absolute;top:5px;bottom:5px;left:5px;width:calc((100% - 10px)/4);background:var(--slicker);border-radius:999px;transform:translateX(calc(var(--i,0) * 100%))}
+  @media (prefers-reduced-motion:no-preference){.glow{transition:transform .45s cubic-bezier(.3,1.4,.5,1)}}
+  .seg{position:relative;text-align:center;padding:10px 2px;color:#fff;font:700 .9rem/1.15 var(--body);transition:color .2s}
+  .seg.on{color:var(--asphalt)}
+  .seg b{display:block;font-size:1.4rem;line-height:1.1;margin-bottom:2px;height:1.6rem}
+  .seg em{display:block;font-style:normal;font-weight:400;font-size:.75rem;opacity:.85}
+  .hoodie{width:1.55rem;height:1.55rem;display:block;margin:0 auto}
+  .math{margin:14px 4px 0;font-weight:700;color:var(--wet)}
+  .math strong{color:var(--asphalt)}
+  .why{font:500 1.2rem/1.35 var(--display);margin:6px 4px 0;min-height:3.3em}
+
+  details{margin-top:24px;background:#fff;border:2px solid var(--storm);border-radius:14px;padding:14px 18px}
+  summary{font:800 1.1rem var(--display);cursor:pointer}
+  .note{color:var(--wet);font-size:.92rem;margin:10px 0}
+  .scroll{overflow-x:auto}
+  table.hm{border-collapse:collapse;font-size:.7rem;margin-top:6px}
+  .hm th{font-weight:700;padding:2px 3px;white-space:nowrap;color:var(--wet)}
+  .hm th.row{text-align:right;padding-right:6px}
+  .hm td{width:22px;height:20px;text-align:center;border:1px solid #fff;font-weight:700}
+  .hm td.l0{background:var(--c0)} .hm td.l1{background:var(--c1)}
+  .hm td.l2{background:var(--c2);color:#fff} .hm td.l3{background:var(--c3);color:#fff}
+  .hm td.me{outline:3px solid var(--slicker);outline-offset:-2px;position:relative;z-index:1}
+  .legend{display:flex;gap:10px;flex-wrap:wrap;font-size:.85rem;margin-top:10px}
+  .legend i{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:4px}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1><span aria-hidden="true">☂️</span> Umbrella or not?</h1>
+  </header>
+
+  <div class="card" id="card">
+    <canvas id="rain" aria-hidden="true"></canvas>
+    <div class="mode" role="group" aria-label="Mode">
+      <button type="button" id="modeAI" aria-pressed="true">AI</button>
+      <button type="button" id="modeDev" aria-pressed="false">Dev</button>
+    </div>
+    <div class="q"><p class="qt">Weather forecast</p><div class="opts" id="forecast"></div></div>
+    <div class="q">
+      <p class="qt">Time to work <span id="timeV"></span></p>
+      <div class="slider">
+        <input id="time" type="range" min="0" max="6" step="1" value="2" aria-label="Time to work">
+        <div class="ticks" id="ticks"></div>
+      </div>
+    </div>
+    <div class="q"><p class="qt">Look out your door</p><div class="opts" id="sky"></div></div>
+    <div class="q"><p class="qt">Mood today</p><div class="opts" id="mood"></div></div>
+  </div>
+
+  <div class="result" aria-live="polite">
+    <div class="track">
+      <div class="glow" id="glow"></div>
+      <div class="seg"><b>😎</b>No umbrella<em>3 or less</em></div>
+      <div class="seg"><b>🎲</b>Take a chance<em>4 to 6</em></div>
+      <div class="seg"><b><svg class="hoodie" viewBox="0 0 64 64" aria-hidden="true"><g stroke="#1C2430" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"><path d="M14 26 L22 20 H42 L50 26 L57 48 L48 50 L46 38 V58 H18 V38 L16 50 L7 48 Z" fill="#7A8FA6"/><path d="M20 24 C18 6 46 6 44 24 C39 28 25 28 20 24 Z" fill="#7A8FA6"/><ellipse cx="32" cy="18" rx="6.5" ry="7.5" fill="#2E3A4B"/><path d="M24 45 H40 L42 53 H22 Z" fill="none"/><path d="M29 27 V34 M35 27 V34" fill="none"/></g></svg></b>Hoodie<em>7 to 9</em></div>
+      <div class="seg"><b>☂️</b>Must bring<em>10 or more</em></div>
+    </div>
+    <p class="math" id="math"></p>
+    <p class="why" id="why"></p>
+  </div>
+
+  <details>
+    <summary>See all 448 combinations</summary>
+    <p class="note">Score = forecast + time + door view + mood. Each cell shows the total. Rows are forecast and door view, columns are time to work, split by mood (W = got wet, N = neutral, L = lucky, H = hate carrying). Your current pick is outlined in yellow.</p>
+    <div class="scroll"><table class="hm" id="hm"></table></div>
+    <div class="legend">
+      <span><i style="background:var(--c0)"></i>No umbrella</span>
+      <span><i style="background:var(--c1)"></i>Take a chance</span>
+      <span><i style="background:var(--c2)"></i>Hoodie</span>
+      <span><i style="background:var(--c3)"></i>Must bring</span>
+    </div>
+  </details>
+</main>
+
+<script>
+// ---------- The whole model: one number per button, added up ----------
+const MODEL = {
+  forecast: [ ["☀️","Sunny",-2], ["☁️","Cloudy",2], ["🌦️","Light shower",5], ["⛈️","Pouring",7] ],
+  time:     [ ["5 min","5m",0], ["10 min","10m",2], ["15 min","15m",3], ["30 min","30m",5], ["1 hour","1h",6], ["2 hours","2h",7], ["4 hours","4h",8] ],
+  sky:      [ ["😎","Clear",0], ["☁️","Cloudy",1], ["🌑","Dark clouds",2], ["🌧️","Raining",5] ],
+  mood:     [ ["💦","Got wet recently",2], ["😐","Neutral / trust AI",0], ["🍀","Feeling lucky",-4], ["🙄","Hate carrying stuff",-1] ]
+};
+const DEFAULTS = { forecast:1, sky:0, mood:1 };
+const level = s => s <= 3 ? 0 : s <= 6 ? 1 : s <= 9 ? 2 : 3;
+const sign = v => (v > 0 ? "+" : "") + v;
+
+const LINES = [
+  ["Nothing up there worth worrying about. Go.", "Enjoy having both hands free."],
+  ["Some risk, small payoff for carrying. You're betting the weather channel is lying.", "Short trip, maybe rain. Live a little."],
+  ["Not umbrella weather, but not bare-head weather either. Hood up if needed.", "A hoodie covers you if the forecast turns out right."],
+  ["The numbers are not on your side today. Bring it.", "Long trip, real rain. This is not the day to be brave."]
+];
+
+// ---------- Build buttons ----------
+const $ = id => document.getElementById(id);
+["forecast","sky","mood"].forEach(name => {
+  $(name).innerHTML = MODEL[name].map(([icon,label,val],i) =>
+    `<label class="opt"><input type="radio" name="${name}" value="${i}" ${i===DEFAULTS[name]?"checked":""}><span>${icon} ${label}<small>${sign(val)}</small></span></label>`
+  ).join("");
+});
+
+// ---------- Evenly spaced slider ticks ----------
+const n = MODEL.time.length - 1;
+$("ticks").innerHTML = MODEL.time.map(([, short, val], i) =>
+  `<div class="tick" style="left:${i/n*100}%">${short}<small>${sign(val)}</small></div>`
+).join("");
+
+// ---------- Heatmap of every combination ----------
+function buildHeatmap(){
+  const moodKeys = ["W","N","L","H"];
+  let h = `<tr><th></th>${MODEL.time.map(t => `<th colspan="4">${t[1]}</th>`).join("")}</tr>`;
+  h += `<tr><th></th>${MODEL.time.map(() => moodKeys.map(k => `<th>${k}</th>`).join("")).join("")}</tr>`;
+  MODEL.forecast.forEach((f, fi) => MODEL.sky.forEach((s, si) => {
+    h += `<tr><th class="row">${f[1]} / ${s[1]}</th>`;
+    MODEL.time.forEach((t, ti) => MODEL.mood.forEach((m, mi) => {
+      const sc = f[2] + t[2] + s[2] + m[2];
+      h += `<td class="l${level(sc)}" id="c${fi}${ti}${si}${mi}">${sc}</td>`;
+    }));
+    h += `</tr>`;
+  }));
+  $("hm").innerHTML = h;
+}
+buildHeatmap();
+
+// ---------- Live update ----------
+const pick = n => +document.querySelector(`input[name=${n}]:checked`).value;
+function update(){
+  const fi = pick("forecast"), si = pick("sky"), mi = pick("mood"), ti = +$("time").value;
+  const [f, t, s, m] = [MODEL.forecast[fi], MODEL.time[ti], MODEL.sky[si], MODEL.mood[mi]];
+  const score = f[2] + t[2] + s[2] + m[2];
+  const lv = level(score);
+  setRain(score);
+
+  $("timeV").textContent = t[0];
+  document.querySelectorAll(".tick").forEach((el, i) => el.classList.toggle("on", i === ti));
+  $("glow").style.setProperty("--i", lv);
+  document.querySelectorAll(".seg").forEach((el, i) => el.classList.toggle("on", i === lv));
+
+  $("math").innerHTML = `Forecast ${sign(f[2])} &nbsp;+&nbsp; Time ${sign(t[2])} &nbsp;+&nbsp; Door ${sign(s[2])} &nbsp;+&nbsp; Mood ${sign(m[2])} &nbsp;=&nbsp; <strong>${score}</strong>`;
+
+  let why = LINES[lv][ti <= 1 ? 1 : 0];
+  if (mi === 2 && lv <= 1 && fi >= 2) why = `It's wet out there, but it's only ${t[0]} and you're feeling lucky. Sprint.`;
+  if (mi === 3 && lv === 2 && fi >= 2) why = `You'd rather get damp than carry an umbrella for ${t[0]}. Hood up and run.`;
+  if (mi === 0 && lv >= 2) why += " You remember how that felt.";
+  $("why").textContent = why;
+
+  document.querySelectorAll(".hm td.me").forEach(el => el.classList.remove("me"));
+  const cell = $(`c${fi}${ti}${si}${mi}`); if (cell) cell.classList.add("me");
+}
+document.querySelectorAll("input").forEach(el => el.addEventListener("input", update));
+
+// ---------- Rain in the parameter box ----------
+// Intensity follows the same score as the heatmap: min -6, max 22.
+const MIN_SCORE = -6, MAX_SCORE = 22;
+let rainT = 0;               // 0 = bone dry, 1 = downpour
+function setRain(score){ rainT = Math.min(1, Math.max(0, (score - MIN_SCORE) / (MAX_SCORE - MIN_SCORE))); }
+
+(function rain(){
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const cv = $("rain"), ctx = cv.getContext("2d"), card = $("card");
+  let W = 0, H = 0, drops = [], splashes = [], last = performance.now(), wait = 0;
+  function size(){
+    const dpr = window.devicePixelRatio || 1;
+    W = card.clientWidth; H = card.clientHeight;
+    cv.width = W * dpr; cv.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  new ResizeObserver(size).observe(card); size();
+
+  function frame(now){
+    const dt = Math.min(50, now - last); last = now;
+    // Interval shrinks and drops grow as the score rises
+    const interval = 2600 * Math.pow(0.012, rainT);   // ~2.6s down to ~30ms
+    wait -= dt;
+    while (wait <= 0) {
+      const r = 2.5 + rainT * 5 + Math.random() * 1.5;          // drop radius grows with the score
+      drops.push({ x: Math.random() * W, y: -r * 3, r,
+                   vy: 0.25 + rainT * 0.55 + Math.random() * 0.15, a: 0.45 + rainT * 0.35 });
+      wait += interval * (0.4 + Math.random() * 1.2);
+    }
+    ctx.clearRect(0, 0, W, H);
+    drops = drops.filter(d => {
+      d.y += d.vy * dt;
+      if (d.y - d.r > H) { splashes.push({ x: d.x, r: 1, a: d.a, max: d.r * 1.6 }); return false; }
+      // Teardrop: round bottom, pointed top
+      const { x, y, r } = d;
+      ctx.fillStyle = `rgba(120,190,245,${d.a})`;
+      ctx.beginPath();
+      ctx.moveTo(x, y - r * 2.6);
+      ctx.quadraticCurveTo(x + r * 1.05, y - r * 0.6, x + r, y);
+      ctx.arc(x, y, r, 0, Math.PI);
+      ctx.quadraticCurveTo(x - r * 1.05, y - r * 0.6, x, y - r * 2.6);
+      ctx.fill();
+      // tiny highlight
+      ctx.fillStyle = `rgba(255,255,255,${d.a * 0.8})`;
+      ctx.beginPath(); ctx.arc(x - r * 0.35, y - r * 0.2, r * 0.25, 0, Math.PI * 2); ctx.fill();
+      return true;
+    });
+    splashes = splashes.filter(s => {
+      s.r += dt * 0.02; s.a -= dt * 0.0012;
+      if (s.a <= 0 || s.r > s.max) return false;
+      ctx.strokeStyle = `rgba(120,190,245,${s.a})`; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.ellipse(s.x, H - 3, s.r * 2, s.r * 0.6, 0, 0, Math.PI * 2); ctx.stroke();
+      return true;
+    });
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+
+// Mode toggle: only changes what's visible, never the calculation
+function setMode(dev){
+  document.body.classList.toggle("dev", dev);
+  $("modeAI").setAttribute("aria-pressed", String(!dev));
+  $("modeDev").setAttribute("aria-pressed", String(dev));
+}
+$("modeAI").onclick = () => setMode(false);
+$("modeDev").onclick = () => setMode(true);
+setMode(false);
+update();
+</script>
+</body>
+</html>
